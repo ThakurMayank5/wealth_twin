@@ -1,0 +1,3 @@
+account_id,Afternoon,Evening,Morning,Night,primary_time,secondary_time,time_profile,insight
+1,20.3778677462888,29.1497975708502,24.561403508771928,25.910931174089068,Evening,Night,Evening Spender," You Mostly spends in the evening, and also active in the night"
+2,2.0905923344947737,45.818815331010455,52.09059233449478,0.0,Morning,Evening,Morning Spender," You Mostly spends in the morning, and also active in the evening"
