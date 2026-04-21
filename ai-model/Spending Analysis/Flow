@@ -1,0 +1,109 @@
+# 🔹 FLOW 1: Per-Transaction Classification
+
+---
+
+## 1. Receive transaction
+
+```json
+{
+  "user_id": 1,
+  "amount": 2500,
+  "category": "shopping"
+}
+```
+
+---
+
+## 2. Excluded Categories
+
+```python
+income_categories = ["salary", "income", "freelance"]
+wealth_categories = ["investment", "insurance_premium"]
+fixed_categories = ["rental", "emi", "utilities"]
+
+excluded_categories = income_categories + wealth_categories + fixed_categories
+```
+
+---
+
+## 3. Filter category
+
+```python
+if category in excluded_categories:
+    return "ignored"
+```
+
+---
+
+## 4. Fetch user average transaction
+
+```python
+user_avg_txn = fetch from user_features table
+```
+
+---
+
+## 5. Compute feature
+
+```python
+amount_vs_avg = amount / user_avg_txn
+```
+
+---
+
+## 6. Prepare input
+
+```python
+X = [[amount, amount_vs_avg]]
+```
+
+---
+
+## 7. Scale input
+
+```python
+X_scaled = scaler.transform(X)
+```
+
+---
+
+## 8. Predict cluster
+
+```python
+cluster = kmeans.predict(X_scaled)[0]
+```
+
+---
+
+## 9. Map cluster → label
+
+```python
+if cluster == 0:
+    spending_level = "Normal"
+elif cluster == 2:
+    spending_level = "Elevated"
+else:
+    spending_level = "Extreme"
+```
+
+---
+
+## 10. Store result
+
+```python
+store:
+    cluster
+    spending_level
+```
+
+---
+
+## 11. Return response
+
+```json
+{
+  "spending_level": "Elevated"
+}
+```
+
+---
