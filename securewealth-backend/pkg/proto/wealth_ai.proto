@@ -1,0 +1,26 @@
+syntax = "proto3";
+package wealthai;
+option go_package = "securewealth/pkg/proto";
+
+service WealthAI {
+  rpc GetRecommendations(UserContext) returns (RecommendationList);
+  rpc Chat(ChatRequest) returns (stream ChatChunk);
+  rpc GetMarketInsights(MarketRequest) returns (MarketInsights);
+}
+
+message UserContext {
+  string user_id = 1;
+  float monthly_income = 2;
+  float monthly_spend = 3;
+  string risk_appetite = 4;
+  repeated TransactionItem recent_transactions = 5;
+  repeated GoalItem goals = 6;
+}
+message TransactionItem { string category = 1; float amount = 2; int64 timestamp = 3; }
+message GoalItem { string goal_type = 1; float target_amount = 2; float current_amount = 3; int64 target_date = 4; }
+message RecommendationList { repeated Recommendation items = 1; }
+message Recommendation { string type = 1; string message = 2; float confidence = 3; string explanation = 4; }
+message ChatRequest { string user_id = 1; string message = 2; string financial_context_json = 3; }
+message ChatChunk { string delta = 1; bool done = 2; }
+message MarketRequest { string user_id = 1; }
+message MarketInsights { string summary = 1; repeated string signals = 2; }

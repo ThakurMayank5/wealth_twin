@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: twinvest-postgres
+    environment:
+      POSTGRES_DB: securewealth
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./securewealth-backend/migrations/001_initial_schema.sql:/docker-entrypoint-initdb.d/001_schema.sql
+      - ./securewealth-backend/migrations/002_seed_data.sql:/docker-entrypoint-initdb.d/002_seed.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: twinvest-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build:
+      context: ./securewealth-backend
+      dockerfile: Dockerfile
+    container_name: twinvest-backend
+    ports:
+      - "42069:42069"
+    environment:
+      PORT: "42069"
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/securewealth?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: twinvest-jwt-secret-dev-only
+      AI_SERVICE_ADDRESS: ""
+      APP_ENV: development
+      SMS_ENABLED: "false"
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: google/gemma-4-26b-a4b-it:free
+      CORS_ORIGINS: "*"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
