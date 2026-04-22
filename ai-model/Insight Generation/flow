@@ -1,0 +1,68 @@
+import pandas as pd
+
+user_df = pd.read_csv("User spending type.csv")
+
+time_df = pd.read_csv("Time_spend_type.csv")
+
+// Has to be changed to 2 for the other user.
+user_id = 1 
+account_id = 1
+user_row = user_df[user_df["user_id"] == user_id].iloc[0]
+time_row = time_df[time_df["account_id"] == account_id].iloc[0]
+
+user_data = {
+    "user_type": user_row["user_type"],
+    "savings_rate": user_row["savings_rate"],
+    "investment_ratio": user_row["investment_ratio"],
+    "elevated_pct": user_row["Elevated"],
+    "extreme_pct": user_row["Extreme"],
+    "time_profile": time_row["time_profile"],
+    "time_summary": time_row["insight"]
+}
+
+goals_data = {
+    1: [
+        {
+            "goal_name": "Emergency Fund",
+            "saved": "₹8K",
+            "target": "₹50K",
+            "progress_pct": 16,
+            "target_year": 2030
+        },
+        {
+            "goal_name": "Investment Corpus",
+            "saved": "₹12K",
+            "target": "₹2.0L",
+            "progress_pct": 6,
+            "target_year": 2035
+        }
+    ],
+    2: [
+        {
+            "goal_name": "Investment Portfolio Growth",
+            "saved": "₹6.3L",
+            "target": "₹30L",
+            "progress_pct": 21,
+            "target_year": 2029
+        },
+        {
+            "goal_name": "Home Loan Repayment",
+            "saved": "₹6.6L",
+            "target": "₹1.2Cr",
+            "progress_pct": 6,
+            "target_year": 2036
+        },
+        {
+            "goal_name": "Retirement Fund",
+            "saved": "₹6.3L",
+            "target": "₹1.5Cr",
+            "progress_pct": 4,
+            "target_year": 2038
+        }
+    ]
+}
+
+import json
+
+goals = goals_data[user_id]
+goals_json = json.dumps(goals, indent=2)
