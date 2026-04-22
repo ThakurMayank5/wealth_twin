@@ -1,0 +1,52 @@
+__________________________
+
+//USER 1 (Young one)//
+__________________________
+
+{
+  "goal_name": "Emergency Fund",
+  "saved": "₹8K",
+  "target": "₹50K",
+  "progress_pct": 16,
+  "target_year": 2030
+}
+
+{
+  "goal_name": "Investment Corpus",
+  "saved": "₹12K",
+  "target": "₹2.0L",
+  "progress_pct": 6,
+  "target_year": 2035
+}
+
+
+
+__________________________
+
+//USER 2 (Old one)//
+__________________________
+
+{
+  "goal_name": "Investment Portfolio Growth",
+  "saved": "₹6.3L",
+  "target": "₹30L",
+  "progress_pct": 21,
+  "target_year": 2029
+}
+
+
+{
+  "goal_name": "Home Loan Repayment",
+  "saved": "₹6.6L",
+  "target": "₹1.2Cr",
+  "progress_pct": 6,
+  "target_year": 2036
+}
+
+{
+  "goal_name": "Retirement Fund",
+  "saved": "₹6.3L",
+  "target": "₹1.5Cr",
+  "progress_pct": 4,
+  "target_year": 2038
+}

@@ -1,0 +1,3 @@
+,Elevated,Extreme,Normal,user_id,balance,total_savings,total_investments,debt,avg_txn,max_txn,txn_frequency,spending_variance,savings_rate,investment_ratio,risk_appetite,anomaly_score,avg_otp_attempts,new_device_count,last_updated,user_type
+0,2.35,0.0,97.65,1,78595,78595,12000,0,918.877192982456,60000,4.0939226519337,28878920.253817,0.210658497099911,0.0321636486443022,,,,18,2026-04-20 14:13:08.864222,Moderate Spender
+1,0.0,0.72,99.28,2,855823,855823,630000,660000,6643.21951219512,300000,3.17127071823204,1145067470.08437,0.427262274973178,0.314522083693827,,,,7,2026-04-20 14:13:08.864222,Investor (Financially Healthy)
