@@ -29,6 +29,7 @@ export default function RootLayout() {
           name="otp-verification"
           options={{ headerShown: false }}
         />
+        <Stack.Screen name="pin-entry" options={{ headerShown: false }} />
 
         {/* Main App Screens */}
         <Stack.Screen name="dashboard" options={{ headerShown: false }} />

@@ -7,8 +7,6 @@ import {
   ScrollView,
   SafeAreaView,
   FlatList,
-  Dimensions,
-  SectionList,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MaterialColors } from "@/constants/theme";
@@ -18,9 +16,13 @@ interface WealthProps {
   onNavigateToHome?: () => void;
   onNavigateToPayments?: () => void;
   onNavigateToProfile?: () => void;
+  portfolioValue?: number;
+  growthText?: string;
+  assetAllocation?: WealthAssetAllocation[];
+  investmentAccounts?: WealthInvestmentAccount[];
 }
 
-interface InvestmentAccount {
+export interface WealthInvestmentAccount {
   id: string;
   name: string;
   type: string;
@@ -32,7 +34,7 @@ interface InvestmentAccount {
   iconBg: "secondary" | "surface";
 }
 
-interface AssetAllocation {
+export interface WealthAssetAllocation {
   id: string;
   name: string;
   percentage: number;
@@ -41,7 +43,7 @@ interface AssetAllocation {
   color: string;
 }
 
-const INVESTMENT_ACCOUNTS: InvestmentAccount[] = [
+const INVESTMENT_ACCOUNTS: WealthInvestmentAccount[] = [
   {
     id: "1",
     name: "Main Brokerage",
@@ -77,7 +79,7 @@ const INVESTMENT_ACCOUNTS: InvestmentAccount[] = [
   },
 ];
 
-const ASSET_ALLOCATION: AssetAllocation[] = [
+const ASSET_ALLOCATION: WealthAssetAllocation[] = [
   {
     id: "1",
     name: "Equities",
@@ -109,11 +111,36 @@ export const WealthScreen: React.FC<WealthProps> = ({
   onNavigateToHome,
   onNavigateToPayments,
   onNavigateToProfile,
+  portfolioValue,
+  growthText,
+  assetAllocation,
+  investmentAccounts,
 }) => {
   const colors = MaterialColors.light;
-  const screenWidth = Dimensions.get("window").width;
+  const allocations =
+    assetAllocation && assetAllocation.length > 0
+      ? assetAllocation
+      : ASSET_ALLOCATION;
+  const accounts =
+    investmentAccounts && investmentAccounts.length > 0
+      ? investmentAccounts
+      : INVESTMENT_ACCOUNTS;
 
-  const renderAccountItem = ({ item }: { item: InvestmentAccount }) => (
+  const totalPortfolio =
+    typeof portfolioValue === "number" ? portfolioValue : 2458930.45;
+  const [portfolioMain, portfolioFraction = "00"] = totalPortfolio
+    .toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+    .split(".");
+
+  const primaryAsset = allocations[0] || ASSET_ALLOCATION[0];
+  const secondaryAsset = allocations[1] || ASSET_ALLOCATION[1];
+  const tertiaryAsset = allocations[2] || ASSET_ALLOCATION[2];
+  const growthBadgeText = growthText || "+₹12,450 (0.51%)";
+
+  const renderAccountItem = ({ item }: { item: WealthInvestmentAccount }) => (
     <TouchableOpacity
       style={[
         styles.accountItem,
@@ -230,8 +257,8 @@ export const WealthScreen: React.FC<WealthProps> = ({
               Total Portfolio Value
             </Text>
             <View style={styles.portfolioValueContainer}>
-              <Text style={styles.portfolioValue}>$2,458,930</Text>
-              <Text style={styles.portfolioDecimal}>.45</Text>
+              <Text style={styles.portfolioValue}>₹{portfolioMain}</Text>
+              <Text style={styles.portfolioDecimal}>.{portfolioFraction}</Text>
             </View>
           </View>
           <View
@@ -255,7 +282,7 @@ export const WealthScreen: React.FC<WealthProps> = ({
                 },
               ]}
             >
-              +$12,450 (0.51%)
+              {growthBadgeText}
             </Text>
           </View>
         </View>
@@ -363,7 +390,7 @@ export const WealthScreen: React.FC<WealthProps> = ({
                     },
                   ]}
                 >
-                  Equities
+                  {primaryAsset.name}
                 </Text>
               </View>
               <Text
@@ -374,7 +401,7 @@ export const WealthScreen: React.FC<WealthProps> = ({
                   },
                 ]}
               >
-                65%
+                {primaryAsset.percentage}%
               </Text>
             </View>
             <Text
@@ -385,7 +412,7 @@ export const WealthScreen: React.FC<WealthProps> = ({
                 },
               ]}
             >
-              $1,598,304.79
+              {primaryAsset.amount}
             </Text>
             <View
               style={[
@@ -400,7 +427,7 @@ export const WealthScreen: React.FC<WealthProps> = ({
                   styles.progressBar,
                   {
                     backgroundColor: colors.primary,
-                    width: "65%",
+                    width: `${Math.max(0, Math.min(primaryAsset.percentage, 100))}%`,
                   },
                 ]}
               />
@@ -433,7 +460,7 @@ export const WealthScreen: React.FC<WealthProps> = ({
                     },
                   ]}
                 >
-                  Fixed Income
+                  {secondaryAsset.name}
                 </Text>
                 <Text
                   style={[
@@ -443,7 +470,7 @@ export const WealthScreen: React.FC<WealthProps> = ({
                     },
                   ]}
                 >
-                  25%
+                  {secondaryAsset.percentage}%
                 </Text>
               </View>
               <Text
@@ -454,7 +481,7 @@ export const WealthScreen: React.FC<WealthProps> = ({
                   },
                 ]}
               >
-                $614,732.61
+                {secondaryAsset.amount}
               </Text>
             </View>
             <View
@@ -474,7 +501,7 @@ export const WealthScreen: React.FC<WealthProps> = ({
                     },
                   ]}
                 >
-                  Cash
+                  {tertiaryAsset.name}
                 </Text>
                 <Text
                   style={[
@@ -484,7 +511,7 @@ export const WealthScreen: React.FC<WealthProps> = ({
                     },
                   ]}
                 >
-                  10%
+                  {tertiaryAsset.percentage}%
                 </Text>
               </View>
               <Text
@@ -495,7 +522,7 @@ export const WealthScreen: React.FC<WealthProps> = ({
                   },
                 ]}
               >
-                $245,893.05
+                {tertiaryAsset.amount}
               </Text>
             </View>
           </View>
@@ -541,7 +568,7 @@ export const WealthScreen: React.FC<WealthProps> = ({
             ]}
           >
             <FlatList
-              data={INVESTMENT_ACCOUNTS}
+              data={accounts}
               renderItem={renderAccountItem}
               keyExtractor={(item) => item.id}
               scrollEnabled={false}

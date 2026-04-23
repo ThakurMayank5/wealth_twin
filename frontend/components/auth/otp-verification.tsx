@@ -8,7 +8,6 @@ import {
   ScrollView,
   Platform,
   SafeAreaView,
-  Linking,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -39,7 +38,7 @@ export const OTPVerification: React.FC<OTPVerificationProps> = ({
   const [timeLeft, setTimeLeft] = useState(initialTimeLeft);
   const [isResending, setIsResending] = useState(false);
   const inputRefs = useRef<(TextInput | null)[]>(Array(OTP_LENGTH).fill(null));
-  const timerRef = useRef<NodeJS.Timeout>();
+  const timerRef = useRef<number | null>(null);
 
   const colors = MaterialColors.light;
 
@@ -48,7 +47,9 @@ export const OTPVerification: React.FC<OTPVerificationProps> = ({
     timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 0) {
-          clearInterval(timerRef.current);
+          if (timerRef.current !== null) {
+            clearInterval(timerRef.current);
+          }
           return 0;
         }
         return prev - 1;
@@ -56,7 +57,9 @@ export const OTPVerification: React.FC<OTPVerificationProps> = ({
     }, 1000);
 
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (timerRef.current !== null) {
+        clearInterval(timerRef.current);
+      }
     };
   }, []);
 
@@ -250,7 +253,7 @@ export const OTPVerification: React.FC<OTPVerificationProps> = ({
             ]}
           >
             <MaterialCommunityIcons
-              name="lock-person"
+              name="account-lock"
               size={40}
               color={colors.primary}
             />
@@ -277,7 +280,7 @@ export const OTPVerification: React.FC<OTPVerificationProps> = ({
                 },
               ]}
             >
-              We've sent a 6-digit security code to
+              We&apos;ve sent a 6-digit security code to
             </Text>
             <Text
               style={[
@@ -295,13 +298,14 @@ export const OTPVerification: React.FC<OTPVerificationProps> = ({
           <View
             style={styles.otpContainer}
             accessible={true}
-            accessibilityRole="group"
             accessibilityLabel="One Time Password Input"
           >
             {otp.map((digit, index) => (
               <TextInput
                 key={index}
-                ref={(ref) => (inputRefs.current[index] = ref)}
+                ref={(ref) => {
+                  inputRefs.current[index] = ref;
+                }}
                 style={[
                   styles.otpInput,
                   {

@@ -35,9 +35,9 @@ services:
       dockerfile: Dockerfile
     container_name: twinvest-backend
     ports:
-      - "42069:42069"
+      - "42070:42070"
     environment:
-      PORT: "42069"
+      PORT: "42070"
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/securewealth?sslmode=disable
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: twinvest-jwt-secret-dev-only

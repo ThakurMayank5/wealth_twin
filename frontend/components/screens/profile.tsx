@@ -16,6 +16,15 @@ interface ProfileProps {
   onNavigateToHome?: () => void;
   onNavigateToWealth?: () => void;
   onNavigateToPayments?: () => void;
+  profile?: ProfileData;
+}
+
+export interface ProfileData {
+  full_name?: string;
+  email?: string;
+  phone?: string;
+  risk_appetite?: string;
+  kyc_status?: string;
 }
 
 interface SecurityOption {
@@ -81,9 +90,16 @@ export const ProfileScreen: React.FC<ProfileProps> = ({
   onNavigateToHome,
   onNavigateToWealth,
   onNavigateToPayments,
+  profile,
 }) => {
   const colors = MaterialColors.light;
   const [biometricsEnabled, setBiometricsEnabled] = useState(true);
+  const displayName = profile?.full_name || "Alex Mercer";
+  const displayEmail = profile?.email || "alex.mercer@example.com";
+  const displayBadge =
+    profile?.kyc_status || profile?.risk_appetite
+      ? `KYC: ${profile?.kyc_status || "PENDING"} • ${profile?.risk_appetite || "MODERATE"}`
+      : "Aegis Premium Member";
 
   const handleLogout = useCallback(() => {
     onLogoutPress?.();
@@ -223,7 +239,7 @@ export const ProfileScreen: React.FC<ProfileProps> = ({
 
           <View style={styles.profileInfo}>
             <Text style={[styles.profileName, { color: colors.onSurface }]}>
-              Alex Mercer
+              {displayName}
             </Text>
             <View style={styles.emailContainer}>
               <MaterialCommunityIcons
@@ -237,9 +253,26 @@ export const ProfileScreen: React.FC<ProfileProps> = ({
                   { color: colors.onSurfaceVariant },
                 ]}
               >
-                alex.mercer@example.com
+                {displayEmail}
               </Text>
             </View>
+            {profile?.phone ? (
+              <View style={styles.emailContainer}>
+                <MaterialCommunityIcons
+                  name="phone-outline"
+                  size={16}
+                  color={colors.primary}
+                />
+                <Text
+                  style={[
+                    styles.profileEmail,
+                    { color: colors.onSurfaceVariant },
+                  ]}
+                >
+                  {profile.phone}
+                </Text>
+              </View>
+            ) : null}
             <View
               style={[
                 styles.memberBadge,
@@ -261,7 +294,7 @@ export const ProfileScreen: React.FC<ProfileProps> = ({
                   },
                 ]}
               >
-                Aegis Premium Member
+                {displayBadge}
               </Text>
             </View>
           </View>

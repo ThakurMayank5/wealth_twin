@@ -1,63 +1,56 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
-import LoginScreenView from "./login";
-import PinEntryScreen from "./pin-entry";
 
-/**
- * App Entry Point
- * Handles navigation based on authentication state:
- * - If user is already logged in → Show PIN Entry
- * - If user is not logged in → Show Login Screen
- */
+import { MaterialColors } from "@/constants/theme";
+import { getAuthSession, isOtpVerified } from "@/services/storage";
+
 export default function Index() {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const colors = MaterialColors.light;
 
   useEffect(() => {
-    // TODO: Replace with your actual authentication state check
-    // This should check if user token exists in secure storage
-    // Example:
-    /*
-    const checkAuthStatus = async () => {
-      try {
-        const token = await SecureStore.getItemAsync('userToken');
-        if (token) {
-          setIsAuthenticated(true);
-        } else {
-          setIsAuthenticated(false);
-        }
-      } catch (error) {
-        setIsAuthenticated(false);
+    let mounted = true;
+
+    const routeBySession = async () => {
+      const session = await getAuthSession();
+      const otpVerified = await isOtpVerified();
+
+      if (!mounted) {
+        return;
       }
-    };
-    
-    checkAuthStatus();
-    */
 
-    // For now, check if user data exists in app state
-    // This is simulated - replace with actual logic
-    const checkAuth = async () => {
-      // Simulate check delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      if (!session) {
+        router.replace("/login");
+        return;
+      }
 
-      // Default to false (show login)
-      // TODO: Check secure storage for auth token
-      setIsAuthenticated(false);
+      if (!otpVerified) {
+        router.replace("/otp-verification");
+        return;
+      }
+
+      router.replace("/pin-entry");
     };
 
-    checkAuth();
+    routeBySession();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  // Show login screen while checking auth state
-  if (isAuthenticated === null) {
-    return <LoginScreenView />;
-  }
-
-  // Show PIN entry if user is already authenticated
-  if (isAuthenticated) {
-    return <PinEntryScreen />;
-  }
-
-  // Show login screen if user is not authenticated
-  return <LoginScreenView />;
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <ActivityIndicator size="large" color={colors.primary} />
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});

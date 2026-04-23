@@ -1,9 +1,18 @@
-import React, { useState } from "react";
+import React from "react";
 import { Alert, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
 import * as LocalAuthentication from "expo-local-authentication";
 import { LoginScreen } from "@/components/auth/login";
 import { MaterialColors } from "@/constants/theme";
+import { authService } from "@/services/auth";
+import { ApiError } from "@/services/http";
+import {
+  ensureDeviceFingerprint,
+  getAuthSession,
+  isOtpVerified,
+  markOtpVerified,
+  saveAuthSession,
+} from "@/services/storage";
 
 /**
  * Login Screen for App Authentication
@@ -11,34 +20,59 @@ import { MaterialColors } from "@/constants/theme";
  */
 export default function LoginScreenView() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
   const colors = MaterialColors.light;
 
-  const handleLogin = async (customerId: string, password: string) => {
+  const toErrorMessage = (error: unknown, fallback: string): string => {
+    if (error instanceof ApiError) {
+      return error.message;
+    }
+    if (error instanceof Error && error.message.trim().length > 0) {
+      return error.message;
+    }
+    return fallback;
+  };
+
+  const handleLogin = async (phone: string, password: string) => {
     try {
-      // TODO: Replace with your actual authentication logic
-      // Example API call to verify credentials
+      console.log("[AUTH][LOGIN] attempt", {
+        phone,
+        passwordLength: password.length,
+      });
 
-      // Simulated API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const deviceFingerprint = await ensureDeviceFingerprint();
+      const authResponse = await authService.login({
+        phone: phone.trim(),
+        password,
+        device_fingerprint: deviceFingerprint,
+      });
 
-      // Example validation - replace with actual backend call
-      if (customerId && password.length >= 6) {
-        // Successful login - navigate to OTP verification
-        router.push("/otp-verification");
-      } else {
-        Alert.alert("Error", "Invalid credentials. Please try again.");
-      }
+      console.log("[AUTH][LOGIN] success", {
+        userId: authResponse.user_id,
+        trustedDevice: authResponse.is_trusted_device,
+        expiresIn: authResponse.expires_in,
+      });
+
+      await saveAuthSession({
+        accessToken: authResponse.access_token,
+        refreshToken: authResponse.refresh_token,
+        userId: authResponse.user_id,
+      });
+      await markOtpVerified(false);
+
+		// OTP send is temporarily bypassed in app flow for local testing.
+		// await authService.sendOtp();
+      router.push("/otp-verification");
     } catch (error) {
-      console.error("Login error:", error);
-      Alert.alert("Error", "An error occurred during login. Please try again.");
+		console.error("[AUTH][LOGIN] failed", error);
+      Alert.alert(
+        "Login Failed",
+        toErrorMessage(error, "Unable to sign in. Please try again."),
+      );
     }
   };
 
   const handleBiometric = async () => {
     try {
-      setIsLoading(true);
-
       // Check if biometric hardware is available
       const compatible = await LocalAuthentication.hasHardwareAsync();
       if (!compatible) {
@@ -67,9 +101,15 @@ export default function LoginScreenView() {
       });
 
       if (result.success) {
-        // TODO: Retrieve stored PIN or credentials
-        // For now, we'll just navigate to OTP verification after biometric success
-        router.push("/otp-verification");
+        const session = await getAuthSession();
+        const otpVerified = await isOtpVerified();
+
+        if (!session) {
+          Alert.alert("Session Required", "Please sign in first.");
+          return;
+        }
+
+        router.push(otpVerified ? "/pin-entry" : "/otp-verification");
       } else if (
         result.error === "user_cancel" ||
         result.error === "app_cancel"
@@ -87,8 +127,6 @@ export default function LoginScreenView() {
         "Error",
         "An error occurred during biometric authentication.",
       );
-    } finally {
-      setIsLoading(false);
     }
   };
 

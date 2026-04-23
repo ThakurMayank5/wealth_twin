@@ -1,0 +1,76 @@
+services:
+  redis:
+    image: redis:7
+    container_name: twinvest-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres:
+    image: postgres:16
+    container_name: twinvest-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: securewealth
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./migrations/001_initial_schema.sql:/docker-entrypoint-initdb.d/001_schema.sql
+      - ./migrations/002_seed_data.sql:/docker-entrypoint-initdb.d/002_seed.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d securewealth"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: twinvest-api
+    command: ["/server"]
+    environment:
+      PORT: "42070"
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/securewealth?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: twinvest-jwt-secret-dev-only
+      APP_ENV: development
+      SMS_ENABLED: "false"
+      CORS_ORIGINS: "*"
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: google/gemma-4-26b-a4b-it:free
+    ports:
+      - "42070:42070"
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: twinvest-worker
+    profiles: ["worker"]
+    command: ["/bin/sh", "-c", "echo 'No worker command configured for securewealth-backend yet.' && tail -f /dev/null"]
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/securewealth?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: twinvest-jwt-secret-dev-only
+      APP_ENV: development
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:

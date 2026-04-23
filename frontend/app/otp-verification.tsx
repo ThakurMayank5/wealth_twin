@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import { Alert, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
 import { OTPVerification } from "@/components/auth/otp-verification";
 import { MaterialColors } from "@/constants/theme";
+import { getAuthSession, markOtpVerified } from "@/services/storage";
 
 /**
  * OTP Verification Screen
@@ -10,92 +11,54 @@ import { MaterialColors } from "@/constants/theme";
  */
 export default function OTPVerificationScreen() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
   const colors = MaterialColors.light;
+
+  useEffect(() => {
+    let mounted = true;
+
+    const ensureSession = async () => {
+      const session = await getAuthSession();
+      if (!mounted) {
+        return;
+      }
+
+      if (!session) {
+        router.replace("/login");
+      }
+    };
+
+    ensureSession();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleVerify = async (otp: string) => {
     try {
-      setIsLoading(true);
-
-      // TODO: Replace with your actual OTP verification API call
-      // Example:
-      /*
-      const response = await fetch('https://your-api.com/verify-otp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          otp: otp,
-          phone: '+1(***) ***-8924',
-        }),
+      console.log("[AUTH][OTP] verify attempt", {
+        otp,
       });
 
-      if (!response.ok) {
-        throw new Error('OTP verification failed');
+      // OTP backend verification is temporarily bypassed for debugging.
+      // Default OTP is hardcoded to 123456 for now.
+      if (otp.trim() !== "123456") {
+        Alert.alert("Verification Failed", "Invalid OTP. Use 123456.");
+        return;
       }
 
-      const data = await response.json();
-      */
-
-      // Simulated API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Example verification
-      if (otp.length === 6) {
-        // Successful verification - navigate to PIN entry
-        Alert.alert("Success", "Identity verified successfully!", [
-          {
-            text: "OK",
-            onPress: () => {
-              router.push("/pin-entry");
-            },
-          },
-        ]);
-      } else {
-        Alert.alert("Error", "Invalid OTP. Please try again.");
-        setIsLoading(false);
-      }
+      await markOtpVerified(true);
+      console.log("[AUTH][OTP] local verification success");
+      router.push("/pin-entry");
     } catch (error) {
-      console.error("Verification error:", error);
-      Alert.alert("Error", "Verification failed. Please try again.", [
-        {
-          text: "OK",
-          onPress: () => setIsLoading(false),
-        },
-      ]);
+      console.error("[AUTH][OTP] verify failed", error);
+      Alert.alert("Verification Failed", "Unable to verify OTP.");
     }
   };
 
   const handleResend = async () => {
-    try {
-      // TODO: Replace with your actual resend OTP API call
-      // Example:
-      /*
-      const response = await fetch('https://your-api.com/resend-otp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          phone: '+1(***) ***-8924',
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Resend failed');
-      }
-      */
-
-      // Simulated API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      Alert.alert("Success", "Code resent to your phone!", [{ text: "OK" }]);
-    } catch (error) {
-      console.error("Resend error:", error);
-      Alert.alert("Error", "Failed to resend code. Please try again.");
-      throw error;
-    }
+	console.log("[AUTH][OTP] resend requested, returning default otp");
+	Alert.alert("Development OTP", "Use 123456 to continue.", [{ text: "OK" }]);
   };
 
   const handleGetHelp = () => {

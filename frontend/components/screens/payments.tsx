@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ interface PaymentsProps {
   onNavigateToHome?: () => void;
   onNavigateToWealth?: () => void;
   onNavigateToProfile?: () => void;
+  transactionSections?: PaymentTransactionSection[];
 }
 
 interface HeroAction {
@@ -35,7 +36,7 @@ interface Payee {
   initials?: string;
 }
 
-interface Transaction {
+export interface PaymentTransaction {
   id: string;
   title: string;
   category: string;
@@ -45,9 +46,9 @@ interface Transaction {
   time: string;
 }
 
-interface TransactionSection {
+export interface PaymentTransactionSection {
   title: string;
-  data: Transaction[];
+  data: PaymentTransaction[];
 }
 
 const HERO_ACTIONS: HeroAction[] = [
@@ -98,7 +99,7 @@ const PAYEES: Payee[] = [
   },
 ];
 
-const TRANSACTIONS_BY_DATE: TransactionSection[] = [
+const TRANSACTIONS_BY_DATE: PaymentTransactionSection[] = [
   {
     title: "TODAY",
     data: [
@@ -151,10 +152,39 @@ export const PaymentsScreen: React.FC<PaymentsProps> = ({
   onNavigateToHome,
   onNavigateToWealth,
   onNavigateToProfile,
+  transactionSections,
 }) => {
   const colors = MaterialColors.light;
   const [searchText, setSearchText] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
+  const sourceSections =
+    transactionSections && transactionSections.length > 0
+      ? transactionSections
+      : TRANSACTIONS_BY_DATE;
+
+  const visibleSections = useMemo(() => {
+    const normalizedSearch = searchText.trim().toLowerCase();
+
+    return sourceSections
+      .map((section) => ({
+        ...section,
+        data: section.data.filter((item) => {
+          const matchesSearch =
+            normalizedSearch.length === 0 ||
+            item.title.toLowerCase().includes(normalizedSearch) ||
+            item.category.toLowerCase().includes(normalizedSearch);
+
+          const matchesFlow =
+            activeFilter === "All" ||
+            activeFilter === "Filter" ||
+            (activeFilter === "In" && item.type === "income") ||
+            (activeFilter === "Out" && item.type === "expense");
+
+          return matchesSearch && matchesFlow;
+        }),
+      }))
+      .filter((section) => section.data.length > 0);
+  }, [sourceSections, searchText, activeFilter]);
 
   const renderHeroAction = ({ item }: { item: HeroAction }) => (
     <TouchableOpacity
@@ -289,7 +319,7 @@ export const PaymentsScreen: React.FC<PaymentsProps> = ({
     </TouchableOpacity>
   );
 
-  const renderTransaction = ({ item }: { item: Transaction }) => (
+  const renderTransaction = ({ item }: { item: PaymentTransaction }) => (
     <TouchableOpacity
       style={[
         styles.transactionItem,
@@ -345,7 +375,7 @@ export const PaymentsScreen: React.FC<PaymentsProps> = ({
   const renderSectionHeader = ({
     section,
   }: {
-    section: TransactionSection;
+    section: PaymentTransactionSection;
   }) => (
     <Text style={[styles.dateHeader, { color: colors.onSurfaceVariant }]}>
       {section.title}
@@ -518,7 +548,7 @@ export const PaymentsScreen: React.FC<PaymentsProps> = ({
 
             {/* Transactions List */}
             <SectionList
-              sections={TRANSACTIONS_BY_DATE}
+              sections={visibleSections}
               keyExtractor={(item) => item.id}
               renderItem={renderTransaction}
               renderSectionHeader={renderSectionHeader}

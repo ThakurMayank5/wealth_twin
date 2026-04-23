@@ -17,18 +17,22 @@ interface DashboardProps {
   onNavigateToWealth?: () => void;
   onNavigateToPayments?: () => void;
   onNavigateToProfile?: () => void;
+  totalBalanceText?: string;
+  balanceChangeText?: string;
+  accountCards?: DashboardAccountCard[];
+  transactions?: DashboardTransaction[];
 }
 
-interface AccountCard {
+export interface DashboardAccountCard {
   id: string;
-  type: "savings" | "checking";
+  type: "savings" | "checking" | "other";
   title: string;
   accountNumber: string;
   balance: string;
   icon: string;
 }
 
-interface Transaction {
+export interface DashboardTransaction {
   id: string;
   title: string;
   date: string;
@@ -37,7 +41,7 @@ interface Transaction {
   icon: string;
 }
 
-const ACCOUNT_CARDS: AccountCard[] = [
+const ACCOUNT_CARDS: DashboardAccountCard[] = [
   {
     id: "1",
     type: "savings",
@@ -56,7 +60,7 @@ const ACCOUNT_CARDS: AccountCard[] = [
   },
 ];
 
-const TRANSACTIONS: Transaction[] = [
+const TRANSACTIONS: DashboardTransaction[] = [
   {
     id: "1",
     title: "Netflix Subscription",
@@ -95,14 +99,23 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
   onNavigateToWealth,
   onNavigateToPayments,
   onNavigateToProfile,
+  totalBalanceText,
+  balanceChangeText,
+  accountCards,
+  transactions,
 }) => {
   const colors = MaterialColors.light;
+  const heroBalance = totalBalanceText || "$42,590.00";
+  const heroDelta = balanceChangeText || "+2.4% from last month";
+  const accounts = accountCards && accountCards.length > 0 ? accountCards : ACCOUNT_CARDS;
+  const recentTransactions =
+    transactions && transactions.length > 0 ? transactions : TRANSACTIONS;
 
   const handleLogout = useCallback(() => {
     onLogoutPress?.();
   }, [onLogoutPress]);
 
-  const renderAccountCard = ({ item }: { item: AccountCard }) => (
+  const renderAccountCard = ({ item }: { item: DashboardAccountCard }) => (
     <View
       style={[
         styles.accountCard,
@@ -170,7 +183,7 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
     </View>
   );
 
-  const renderTransaction = ({ item }: { item: Transaction }) => (
+  const renderTransaction = ({ item }: { item: DashboardTransaction }) => (
     <View
       style={[
         styles.transactionItem,
@@ -324,14 +337,14 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
               />
             </TouchableOpacity>
           </View>
-          <Text style={styles.balanceAmount}>$42,590.00</Text>
+          <Text style={styles.balanceAmount}>{heroBalance}</Text>
           <View style={styles.balanceChange}>
             <MaterialCommunityIcons
               name="trending-up"
               size={16}
               color={colors.onPrimary}
             />
-            <Text style={styles.balanceChangeText}>+2.4% from last month</Text>
+            <Text style={styles.balanceChangeText}>{heroDelta}</Text>
           </View>
         </View>
 
@@ -386,7 +399,7 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
             My Accounts
           </Text>
           <FlatList
-            data={ACCOUNT_CARDS}
+            data={accounts}
             renderItem={renderAccountCard}
             keyExtractor={(item) => item.id}
             scrollEnabled={true}
@@ -434,7 +447,7 @@ export const DashboardScreen: React.FC<DashboardProps> = ({
             </TouchableOpacity>
           </View>
           <FlatList
-            data={TRANSACTIONS}
+            data={recentTransactions}
             renderItem={renderTransaction}
             keyExtractor={(item) => item.id}
             scrollEnabled={false}

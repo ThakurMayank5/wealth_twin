@@ -20,6 +20,6 @@ RUN apk add --no-cache ca-certificates tzdata
 COPY --from=builder /server /server
 COPY migrations/ /migrations/
 
-EXPOSE 42069
+EXPOSE 42070
 
 CMD ["/server"]

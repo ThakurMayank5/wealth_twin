@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Alert, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -6,6 +6,13 @@ import {
   type RegistrationFormData,
 } from "@/components/auth/register";
 import { MaterialColors } from "@/constants/theme";
+import { authService } from "@/services/auth";
+import { ApiError } from "@/services/http";
+import {
+  ensureDeviceFingerprint,
+  markOtpVerified,
+  saveAuthSession,
+} from "@/services/storage";
 
 /**
  * Registration Screen for New Users
@@ -13,58 +20,56 @@ import { MaterialColors } from "@/constants/theme";
  */
 export default function RegisterScreenView() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
   const colors = MaterialColors.light;
+
+  const toErrorMessage = (error: unknown, fallback: string): string => {
+    if (error instanceof ApiError) {
+      return error.message;
+    }
+    if (error instanceof Error && error.message.trim().length > 0) {
+      return error.message;
+    }
+    return fallback;
+  };
 
   const handleContinue = async (formData: RegistrationFormData) => {
     try {
-      setIsLoading(true);
+		console.log("[AUTH][REGISTER] attempt", {
+			email: formData.email,
+			phone: formData.mobileNumber,
+			fullName: formData.fullName,
+			passwordLength: formData.password.length,
+		});
 
-      // TODO: Replace with your actual registration API call
-      // Example API call to create account
-      /*
-      const response = await fetch('https://your-api.com/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fullName: formData.fullName,
-          accountNumber: formData.accountNumber,
-          mobileNumber: formData.mobileNumber,
-          email: formData.email,
-        }),
+      const deviceFingerprint = await ensureDeviceFingerprint();
+      const authResponse = await authService.register({
+        email: formData.email.trim(),
+        phone: formData.mobileNumber.trim(),
+        full_name: formData.fullName.trim(),
+        password: formData.password,
+        device_fingerprint: deviceFingerprint,
       });
 
-      if (!response.ok) {
-        throw new Error('Registration failed');
-      }
+		console.log("[AUTH][REGISTER] success", {
+			userId: authResponse.user_id,
+			expiresIn: authResponse.expires_in,
+		});
 
-      const data = await response.json();
-      */
+      await saveAuthSession({
+        accessToken: authResponse.access_token,
+        refreshToken: authResponse.refresh_token,
+        userId: authResponse.user_id,
+      });
+      await markOtpVerified(false);
 
-      // Simulated API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Simulate successful registration
-      if (formData.fullName && formData.email) {
-        // Navigate to OTP verification
-        router.push("/otp-verification");
-      } else {
-        Alert.alert("Error", "Please fill in all required fields.");
-        setIsLoading(false);
-      }
+		// OTP send is temporarily bypassed in app flow for local testing.
+		// await authService.sendOtp();
+      router.push("/otp-verification");
     } catch (error) {
-      console.error("Registration error:", error);
+		console.error("[AUTH][REGISTER] failed", error);
       Alert.alert(
-        "Error",
-        "An error occurred during registration. Please try again.",
-        [
-          {
-            text: "OK",
-            onPress: () => setIsLoading(false),
-          },
-        ],
+        "Registration Failed",
+        toErrorMessage(error, "An error occurred during registration."),
       );
     }
   };
